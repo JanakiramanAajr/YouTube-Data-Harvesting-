@@ -14,7 +14,7 @@ st.set_page_config(page_title="Youtube Data Harvesting and Warehousing | By Jana
                    page_icon=icon,
                    layout="wide",
                    initial_sidebar_state="expanded",
-                   menu_items={'About': """# This app is created by *janakiraman*"""})
+                   menu_items={'About': """# This app is created by *Janakiraman!*"""})
 
 # CREATING OPTION MENU
 with st.sidebar:
@@ -41,7 +41,7 @@ mydb = sql.connect(host="localhost",
 mycursor = mydb.cursor(buffered=True)
 
 # BUILDING CONNECTION WITH YOUTUBE API
-api_key = "AIzaSyCkglXpsoXo7QjsLDBAL8mzCfX4YZzpdtg"
+api_key = "AIzaSyAURWIiiUw4YMO0XZMMjN6UNbbzZdgTieU"
 youtube = build('youtube', 'v3', developerKey=api_key)
 
 
