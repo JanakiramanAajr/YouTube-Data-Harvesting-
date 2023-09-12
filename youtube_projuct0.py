@@ -1,17 +1,17 @@
 # importing the necessary libraries
 import pandas as pd
+from PIL import Image
 import plotly.express as px
 import streamlit as st
 from streamlit_option_menu import option_menu
 import mysql.connector as sql
 import pymongo
 from googleapiclient.discovery import build
-from PIL import Image
 
 # SETTING PAGE CONFIGURATIONS
-icon = Image.open("Youtube_logo.png")
+icon = Image.open(r"C:\Users\A.JANAKIRAMAN\Downloads\youtube icon.png")
 st.set_page_config(page_title="Youtube Data Harvesting and Warehousing | By Janakiraman",
-                   page_icon=icon,
+                   page_icon= icon,
                    layout="wide",
                    initial_sidebar_state="expanded",
                    menu_items={'About': """# This app is created by *Janakiraman!*"""})
@@ -23,14 +23,14 @@ with st.sidebar:
                            default_index=0,
                            orientation="vertical",
                            styles={"nav-link": {"font-size": "30px", "text-align": "centre", "margin": "0px",
-                                                "--hover-color": "#C80101"},
+                                                "--hover-color": "red"},
                                    "icon": {"font-size": "30px"},
-                                   "container": {"max-width": "6000px"},
-                                   "nav-link-selected": {"background-color": "#C80101"}})
+                                   "container": {"max-width": "6000px"}})
 
 # Bridging a connection with MongoDB Atlas and Creating a new database(youtube_data)
 client = pymongo.MongoClient("mongodb+srv://ajr:1010@cluster0.qzzqxkq.mongodb.net/?retryWrites=true&w=majority",)
-db = client['youtube_data']
+db = client.youtube_data
+a = db.data_youtube
 
 # CONNECTING WITH MYSQL DATABASE
 mydb = sql.connect(host="localhost",
@@ -41,7 +41,7 @@ mydb = sql.connect(host="localhost",
 mycursor = mydb.cursor(buffered=True)
 
 # BUILDING CONNECTION WITH YOUTUBE API
-api_key = "AIzaSyAURWIiiUw4YMO0XZMMjN6UNbbzZdgTieU"
+api_key = "AIzaSyA12vdrzSv4VGsjF4QupDEA5Qh-VW3qeiw"
 youtube = build('youtube', 'v3', developerKey=api_key)
 
 
@@ -62,6 +62,7 @@ def get_channel_details(channel_id):
                     Country=response['items'][i]['snippet'].get('country')
                     )
         ch_data.append(data)
+
     return ch_data
 
 
@@ -86,6 +87,7 @@ def get_channel_videos(channel_id):
 
         if next_page_token is None:
             break
+
     return video_ids
 
 
@@ -158,19 +160,29 @@ def channel_names():
 if selected == "Home":
     # Title Image
 
-    col1, col2 = st.columns(2, gap='medium')
-    col1.markdown("## :blue[Domain] : Social Media")
-    col1.markdown("## :blue[Technologies used] : Python,MongoDB, Youtube Data API, MySql, Streamlit")
-    col1.markdown(
-        "## :blue[Overview] : Retrieving the Youtube channels data from the Google API, storing it in a MongoDB as data lake, migrating and transforming data into a SQL database,then querying the data and displaying it in the Streamlit app.")
-    col2.markdown("#   ")
-    col2.markdown("#   ")
-    col2.markdown("#   ")
-    col2.image("youtubeMain.png")
+    col1, col2 = st.columns([2, 3])
+    with col1:
+        image = Image.open(r"C:\Users\A.JANAKIRAMAN\Downloads\youtube icon.png")
+        # Resize the image to the desired dimensions
+        new_width = 300  # Set your desired width
+        new_height = 200  # Set your desired height
+        resized_image = image.resize((new_width, new_height))
+        # Display the resized image
+        st.image(resized_image, caption="Youtube")
+    with col2:
+        st.title('')
+        st.write("## :blue[Domain] : Social Media")
+        st.write("## :blue[Technologies used] : Python,MongoDB, Youtube Data API, MySql, Streamlit")
+        st.write("## :blue[Overview] : Retrieving the Youtube channels data from the Google API,"
+                 " storing it in a MongoDB as data lake, migrating and transforming data into a SQL database,"
+                 "then querying the data and displaying it in the Streamlit app.")
+
+
 
 # EXTRACT and TRANSFORM PAGE
 if selected == "Extract and Transform":
-    tab1, tab2 = st.tabs(["$\huge EXTRACT $", "$\huge TRANSFORM $"])
+
+    tab1, tab2 = st.tabs(["EXTRACT ", "TRANSFORM"])
 
     # EXTRACT TAB
     with tab1:
@@ -189,7 +201,6 @@ if selected == "Extract and Transform":
                 ch_details = get_channel_details(ch_id)
                 v_ids = get_channel_videos(ch_id)
                 vid_details = get_video_details(v_ids)
-
 
                 def comments():
                     com_d = []
@@ -221,24 +232,86 @@ if selected == "Extract and Transform":
 
         def insert_into_channels():
             collections = db.channel_details
-            query = """INSERT INTO channels VALUES(%s,%s,%s,%s,%s,%s,%s,%s)"""
+            query0 = """
+            CREATE TABLE channels (
+              Channel_id varchar(50),
+              Channel_name varchar(50),
+              Playlist_id varchar(50),
+              Subscribers int,
+              Views int,
+              Total_videos int,
+              Description varchar(100),
+              Country varchar(50)
+            )
+            """
 
+            try:
+                mycursor.execute(query0)
+                mydb.commit()
+            except:
+                pass
+            query = """INSERT INTO channels VALUES(%s,%s,%s,%s,%s,%s,%s,%s)"""
             for i in collections.find({"Channel_name": user_inp}, {'_id': 0}):
                 mycursor.execute(query, tuple(i.values()))
                 mydb.commit()
 
 
         def insert_into_videos():
+            query01 = """
+            CREATE TABLE videos (
+                Channel_name varchar(50),
+                Channel_id varchar(50),
+                Video_id varchar(50),
+                Title varchar(50),
+                Tags varchar(50),
+                Thumbnail varchar(50),
+                Description varchar(50),
+                Published_date DATE,
+                Duration varchar(50),
+                Views INT,
+                Likes INT,
+                Comments INT,
+                Favorite_count INT,
+                Definition varchar(50),
+                Caption_status varchar(50)
+            )
+            """
+
+            try:
+                mycursor.execute(query01)
+                mydb.commit()
+            except:
+                pass
             collectionss = db.video_details
+
             query1 = """INSERT INTO videos VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
 
             for i in collectionss.find({"Channel_name": user_inp}, {"_id": 0}):
-                t = tuple(i.values())
-                mycursor.execute(query1, t)
+                i['Tags'] = ','.join(i['Tags']) if i['Tags'] else None  # Convert Tags list to a comma-separated string
+                values = tuple(i.values())
+                mycursor.execute(query1, values)
                 mydb.commit()
 
 
         def insert_into_comments():
+            query02 = """
+            CREATE TABLE comments (
+                Comment_id  varchar(50),
+                Video_id varchar(50),
+                Comment_text varchar(50),
+                Comment_author varchar(50),
+                Comment_posted_date DATE,
+                Like_count INT,
+                Reply_count INT   
+            )
+            """
+
+            try:
+                mycursor.execute(query02)
+                mydb.commit()
+            except:
+                pass
+
             collections1 = db.video_details
             collections2 = db.comments_details
             query2 = """INSERT INTO comments VALUES(%s,%s,%s,%s,%s,%s,%s)"""
@@ -251,6 +324,7 @@ if selected == "Extract and Transform":
 
 
         if st.button("Submit"):
+
             try:
 
                 insert_into_channels()
